@@ -8,6 +8,7 @@ import nc.app.models.Cinema.ReservedStatus;
 import nc.app.models.Seat;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 
 public class CinemaRepository {
   private CinemaDao cinemaDao = new CinemaDao();
@@ -27,13 +28,28 @@ public class CinemaRepository {
     Cinema cinema = cinemaDao.getCinemaById(cinemaId);
     if (quantity > cinema.getWidth() * cinema.getHeight())
       return new AvailableStatus(AvailableStatus.TYPE.NOT_AVAILABLE, availableSeats);
+
     ArrayList<Seat> reservedSeats = cinemaDao.getReservedSeats(cinemaId);
-    if (reservedSeats.size() < 1) {
-      Seat currentSeat = new Seat(0, 0);
-      availableSeats = getAvailableSeats(quantity, cinema, currentSeat);
-    } else {
-      Seat currentSeat = new Seat(0, 1);
-      availableSeats = getAvailableSeats(quantity, cinema, currentSeat);
+
+    // Get all invalid seats as HashSet
+    HashSet<Integer> invalidSeatsSet = new HashSet<>();
+    for (int i = 0; i < reservedSeats.size(); i++) {
+      Seat reservedSeat = reservedSeats.get(i);
+      for (int j = 0; j < cinema.getHeight(); j++) {
+        for (int k = 0; k < cinema.getWidth() - j; k++) {
+          int columnNo = reservedSeat.getColumn_no() + j;
+          int rowNo = reservedSeat.getRow_no() + k;
+          if (columnNo < cinema.getHeight() && rowNo < cinema.getWidth())
+            invalidSeatsSet.add(new Seat(rowNo, columnNo).flat(cinema));
+        }
+      }
+    }
+    for (int i = 0; i < cinema.getHeight(); i++) {
+      for (int j = 0; j < cinema.getWidth(); j++) {
+        if (!invalidSeatsSet.contains(Seat.flat(cinema, j, i))) {
+          availableSeats.add(new Seat(j, i));
+        }
+      }
     }
     return new AvailableStatus(AvailableStatus.TYPE.SUCCESS, availableSeats);
   }
@@ -66,10 +82,14 @@ public class CinemaRepository {
     Cinema cinema = cinemaDao.getCinemaById(cinemaId);
     for (int i = 0; i < seats.size(); i++) {
       boolean validSeat = true;
-      validSeat = isValidSeat(seats, invalidSeats, reservedSeats, cinema, i, validSeat);
-      if (!validSeat) continue;
-      validSeat = isValidSeat(seats, invalidSeats, reservedSeatsTmp, cinema, i, validSeat);
+      validSeat = isValidDistanceSeat(cinema, reservedSeats, seats.get(i));
+      if (!validSeat) {
+        invalidSeats.add(seats.get(i));
+        continue;
+      }
+      validSeat = isValidSeat(cinema, reservedSeatsTmp, seats.get(i));
       if (validSeat) reservedSeatsTmp.add(seats.get(i));
+      else invalidSeats.add(seats.get(i));
     }
     if (invalidSeats.size() > 0)
       return new ReservedStatus(ReservedStatus.TYPE.RESERVE_FAIL, invalidSeats);
@@ -80,15 +100,25 @@ public class CinemaRepository {
     }
   }
 
-  private boolean isValidSeat(
-    ArrayList<Seat> seats,
-    ArrayList<Seat> invalidSeats,
-    ArrayList<Seat> reservedSeatsTmp,
-    Cinema cinema, int i, boolean validSeat
+  private boolean isValidDistanceSeat(
+    Cinema cinema, ArrayList<Seat> reservedSeats, Seat seat
   ) {
-    for (int j = 0; j < reservedSeatsTmp.size(); j++) {
-      if (Seat.LmDistance(seats.get(i), reservedSeatsTmp.get(j)) < cinema.getMin_distance()) {
-        invalidSeats.add(seats.get(i));
+    boolean validSeat = true;
+    for (int j = 0; j < reservedSeats.size(); j++) {
+      if (Seat.LmDistance(seat, reservedSeats.get(j)) < cinema.getMin_distance()) {
+        validSeat = false;
+        continue;
+      }
+    }
+    return validSeat;
+  }
+
+  private boolean isValidSeat(
+    Cinema cinema, ArrayList<Seat> reservedSeats, Seat seat
+  ) {
+    boolean validSeat = true;
+    for (int j = 0; j < reservedSeats.size(); j++) {
+      if (seat.equals(reservedSeats.get(j))) {
         validSeat = false;
         continue;
       }

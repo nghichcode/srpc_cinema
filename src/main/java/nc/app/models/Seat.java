@@ -45,6 +45,22 @@ public class Seat {
     return Math.abs(src.getRow_no() - dst.getRow_no()) + Math.abs(src.getColumn_no() - dst.getColumn_no());
   }
 
+  public Seat clone() {
+    return new Seat(id, row_no, column_no);
+  }
+
+  public int flat(Cinema cinema) {
+    return row_no * cinema.getWidth() + column_no;
+  }
+
+  public static int flat(Cinema cinema, int row_no, int column_no) {
+    return row_no * cinema.getWidth() + column_no;
+  }
+
+  public static Seat fromFlat(Cinema cinema, int val) {
+    return new Seat(val / cinema.getWidth(), val % cinema.getWidth());
+  }
+
   @Override
   public String toString() {
     return "Seat{" +
