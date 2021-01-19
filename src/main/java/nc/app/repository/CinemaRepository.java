@@ -22,23 +22,35 @@ public class CinemaRepository {
   }
 
   public AvailableStatus getAvailableSeats(int cinemaId, int quantity) {
-    Cinema cinema = cinemaDao.getCinemaById(cinemaId);
-    ArrayList<Seat> reservedSeats = cinemaDao.getReservedSeats(cinemaId);
     ArrayList<Seat> availableSeats = new ArrayList<>();
+    if (quantity < 1) return new AvailableStatus(AvailableStatus.TYPE.NOT_AVAILABLE, availableSeats);
+    Cinema cinema = cinemaDao.getCinemaById(cinemaId);
+    if (quantity > cinema.getWidth() * cinema.getHeight())
+      return new AvailableStatus(AvailableStatus.TYPE.NOT_AVAILABLE, availableSeats);
+    ArrayList<Seat> reservedSeats = cinemaDao.getReservedSeats(cinemaId);
     if (reservedSeats.size() < 1) {
       Seat currentSeat = new Seat(0, 0);
-      for (int i = 1; i <= quantity; i++) {
-        if (currentSeat.getRow_no() > cinema.getWidth()) {
-          currentSeat.setColumn_no(currentSeat.getColumn_no() + 1);
-          currentSeat.setRow_no(cinema.getMin_distance() - currentSeat.getColumn_no());
-        }
-        if (currentSeat.getRow_no() <= cinema.getWidth() && currentSeat.getColumn_no() <= cinema.getHeight()) {
-          availableSeats.add(new Seat(currentSeat.getRow_no(), currentSeat.getColumn_no()));
-          currentSeat.setRow_no(currentSeat.getRow_no() + 1);
-        }
-      }
+      availableSeats = getAvailableSeats(quantity, cinema, currentSeat);
+    } else {
+      Seat currentSeat = new Seat(0, 1);
+      availableSeats = getAvailableSeats(quantity, cinema, currentSeat);
     }
     return new AvailableStatus(AvailableStatus.TYPE.SUCCESS, availableSeats);
+  }
+
+  private ArrayList<Seat> getAvailableSeats(int quantity, Cinema cinema, Seat currentSeat) {
+    ArrayList<Seat> availableSeats = new ArrayList<>();
+    for (int i = 1; i <= quantity; i++) {
+      if (currentSeat.getRow_no() > cinema.getWidth()) {
+        currentSeat.setColumn_no(currentSeat.getColumn_no() + 1);
+        currentSeat.setRow_no(cinema.getMin_distance() - currentSeat.getColumn_no());
+      }
+      if (currentSeat.getRow_no() <= cinema.getWidth() && currentSeat.getColumn_no() <= cinema.getHeight()) {
+        availableSeats.add(new Seat(currentSeat.getRow_no(), currentSeat.getColumn_no()));
+        currentSeat.setRow_no(currentSeat.getRow_no() + 1);
+      }
+    }
+    return availableSeats;
   }
 
   public Cinema getLastCinema() {
