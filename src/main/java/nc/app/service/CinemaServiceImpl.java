@@ -21,7 +21,7 @@ public class CinemaServiceImpl extends CinemaServiceGrpc.CinemaServiceImplBase {
     CreateRequest request,
     StreamObserver<CreateResponse> responseObserver
   ) {
-    Cinema.CreateStatus status = repository.create(
+    Cinema.CreateStatus status = repository.createCinema(
       new Cinema(request.getWidth(), request.getHeight(), request.getMinDistance())
     );
     CreateResponse response = CreateResponse.newBuilder()

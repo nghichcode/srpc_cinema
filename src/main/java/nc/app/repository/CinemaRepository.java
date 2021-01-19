@@ -13,9 +13,9 @@ import java.util.HashSet;
 public class CinemaRepository {
   private CinemaDao cinemaDao = new CinemaDao();
 
-  public CreateStatus create(Cinema cinema) {
+  public CreateStatus createCinema(Cinema cinema) {
     // Check min_distance is valid
-    if (cinema.getMin_distance() <= 0
+    if (cinema == null || cinema.getMin_distance() <= 0
       || cinema.getMin_distance() > cinema.getHeight() + cinema.getWidth() - 2
     )
       return new CreateStatus(CreateStatus.TYPE.INVALID, -1);
@@ -26,6 +26,7 @@ public class CinemaRepository {
     ArrayList<Seat> availableSeats = new ArrayList<>();
     if (quantity < 1) return new AvailableStatus(AvailableStatus.TYPE.NOT_AVAILABLE, availableSeats);
     Cinema cinema = cinemaDao.getCinemaById(cinemaId);
+    if (cinema == null) return new AvailableStatus(AvailableStatus.TYPE.GET_FAIL, availableSeats);
     if (quantity > cinema.getWidth() * cinema.getHeight())
       return new AvailableStatus(AvailableStatus.TYPE.NOT_AVAILABLE, availableSeats);
 
@@ -35,23 +36,36 @@ public class CinemaRepository {
     HashSet<Integer> invalidSeatsSet = new HashSet<>();
     for (int i = 0; i < reservedSeats.size(); i++) {
       Seat reservedSeat = reservedSeats.get(i);
-      for (int j = 0; j < cinema.getHeight(); j++) {
-        for (int k = 0; k < cinema.getWidth() - j; k++) {
-          int columnNo = reservedSeat.getColumn_no() + j;
-          int rowNo = reservedSeat.getRow_no() + k;
-          if (columnNo < cinema.getHeight() && rowNo < cinema.getWidth())
-            invalidSeatsSet.add(new Seat(rowNo, columnNo).flat(cinema));
+      int minColumn = reservedSeat.getColumn_no() - cinema.getMin_distance() + 1;
+      minColumn = minColumn < 0 ? 0 : minColumn;
+      int maxColumn = (minColumn + cinema.getMin_distance() < cinema.getHeight())
+        ? minColumn + cinema.getMin_distance() : cinema.getHeight();
+      int minRow = reservedSeat.getRow_no() - cinema.getMin_distance() + 1;
+      minRow = minRow < 0 ? 0 : minRow;
+      int maxRow = (reservedSeat.getRow_no() + cinema.getMin_distance() < cinema.getWidth())
+        ? reservedSeat.getRow_no() + cinema.getMin_distance() : cinema.getWidth();
+      for (int j = minColumn; j < maxColumn; j++) {
+        for (int k = minRow; k < maxRow; k++) {
+          Seat seat = new Seat(k, j);
+          if (Seat.LmDistance(reservedSeat, seat) < cinema.getMin_distance())
+            invalidSeatsSet.add(seat.flat(cinema));
         }
       }
     }
-    for (int i = 0; i < cinema.getHeight(); i++) {
-      for (int j = 0; j < cinema.getWidth(); j++) {
+    // Check enough available seats
+    int count = 0;
+    for (int i = 0; i < cinema.getWidth(); i++) {
+      for (int j = 0; j < cinema.getHeight(); j++) {
         if (!invalidSeatsSet.contains(Seat.flat(cinema, j, i))) {
           availableSeats.add(new Seat(j, i));
+          count++;
         }
+        if (count >= quantity) break;
       }
+      if (count >= quantity) break;
     }
-    return new AvailableStatus(AvailableStatus.TYPE.SUCCESS, availableSeats);
+    if (count == quantity) return new AvailableStatus(AvailableStatus.TYPE.SUCCESS, availableSeats);
+    else return new AvailableStatus(AvailableStatus.TYPE.NOT_AVAILABLE, availableSeats);
   }
 
   private ArrayList<Seat> getAvailableSeats(int quantity, Cinema cinema, Seat currentSeat) {
@@ -75,11 +89,14 @@ public class CinemaRepository {
 
   public ReservedStatus reserve(int cinemaId, ArrayList<Seat> seats) {
     ArrayList<Seat> invalidSeats = new ArrayList<>();
-    if (seats.size() <= 0)
+    if (seats == null || seats.size() <= 0)
       return new ReservedStatus(ReservedStatus.TYPE.EMPTY, invalidSeats);
+    Cinema cinema = cinemaDao.getCinemaById(cinemaId);
+    if (cinema == null)
+      return new ReservedStatus(ReservedStatus.TYPE.RESERVE_FAIL, invalidSeats);
+
     ArrayList<Seat> reservedSeats = cinemaDao.getReservedSeats(cinemaId);
     ArrayList<Seat> reservedSeatsTmp = new ArrayList<>();
-    Cinema cinema = cinemaDao.getCinemaById(cinemaId);
     for (int i = 0; i < seats.size(); i++) {
       boolean validSeat = true;
       validSeat = isValidDistanceSeat(cinema, reservedSeats, seats.get(i));
@@ -98,6 +115,10 @@ public class CinemaRepository {
         return new ReservedStatus(ReservedStatus.TYPE.SUCCESS, invalidSeats);
       else return new ReservedStatus(ReservedStatus.TYPE.INSERT_FAIL, invalidSeats);
     }
+  }
+
+  public void insertSeats(Cinema cinema, ArrayList<Seat> seats) {
+    cinemaDao.insertSeats(cinema.getId(), seats);
   }
 
   private boolean isValidDistanceSeat(

@@ -24,7 +24,7 @@ public final class CinemaServiceGrpc {
     CinemaServiceOuterClass.CreateResponse> getCreateMethod;
 
   @io.grpc.stub.annotations.RpcMethod(
-      fullMethodName = SERVICE_NAME + '/' + "create",
+      fullMethodName = SERVICE_NAME + '/' + "createCinema",
       requestType = CinemaServiceOuterClass.CreateRequest.class,
       responseType = CinemaServiceOuterClass.CreateResponse.class,
       methodType = io.grpc.MethodDescriptor.MethodType.UNARY)
@@ -37,13 +37,13 @@ public final class CinemaServiceGrpc {
           CinemaServiceGrpc.getCreateMethod = getCreateMethod =
               io.grpc.MethodDescriptor.<CinemaServiceOuterClass.CreateRequest, CinemaServiceOuterClass.CreateResponse>newBuilder()
               .setType(io.grpc.MethodDescriptor.MethodType.UNARY)
-              .setFullMethodName(generateFullMethodName(SERVICE_NAME, "create"))
+              .setFullMethodName(generateFullMethodName(SERVICE_NAME, "createCinema"))
               .setSampledToLocalTracing(true)
               .setRequestMarshaller(io.grpc.protobuf.ProtoUtils.marshaller(
                   CinemaServiceOuterClass.CreateRequest.getDefaultInstance()))
               .setResponseMarshaller(io.grpc.protobuf.ProtoUtils.marshaller(
                   CinemaServiceOuterClass.CreateResponse.getDefaultInstance()))
-              .setSchemaDescriptor(new CinemaServiceMethodDescriptorSupplier("create"))
+              .setSchemaDescriptor(new CinemaServiceMethodDescriptorSupplier("createCinema"))
               .build();
         }
       }
