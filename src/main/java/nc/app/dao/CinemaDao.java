@@ -33,7 +33,7 @@ public class CinemaDao {
   public ArrayList<Seat> getReservedSeats(int cinemaId) {
     ArrayList<Seat> seats = new ArrayList<>();
     try {
-      String sql = "SELECT id, row_no, column_no FROM seat WHERE cinema_id = ?";
+      String sql = "SELECT id, row_no, column_no FROM seat WHERE cinema_id = ? ORDER BY id DESC";
       Connection cons = CinemaDatabase.getInstance().getConnection();
       PreparedStatement stmt = cons.prepareStatement(sql);
       stmt.setInt(1, cinemaId);
@@ -84,6 +84,27 @@ public class CinemaDao {
       e.printStackTrace();
     }
     return cinema;
+  }
+
+  public Seat getLastSeat(int cinemaId) {
+    Seat seat = null;
+    try {
+      String sql = "SELECT id, row_no, column_no FROM seat WHERE cinema_id=? ORDER  BY id DESC LIMIT 1";
+      Connection cons = CinemaDatabase.getInstance().getConnection();
+      PreparedStatement stmt = cons.prepareStatement(sql);
+      stmt.setInt(1, cinemaId);
+      ResultSet resultSet = stmt.executeQuery();
+
+      if (resultSet.next()) {
+        seat = new Seat(
+          resultSet.getInt(1), resultSet.getInt(2),
+          resultSet.getInt(3)
+        );
+      }
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+    return seat;
   }
 
   public int insertSeats(int cinemaId, ArrayList<Seat> seats) {
