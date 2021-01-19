@@ -103,5 +103,5 @@ public class CinemaTest {
       status.type == Cinema.ReservedStatus.TYPE.SUCCESS
     );
   }
-https://github.com/nghichcode/srpc_cinema.git
+
 }
