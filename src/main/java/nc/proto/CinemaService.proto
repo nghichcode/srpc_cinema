@@ -1,5 +1,5 @@
 syntax = "proto3";
-package main.proto.generated;
+package nc.proto.generated;
 
 message CreateRequest {
   int32 width = 1;

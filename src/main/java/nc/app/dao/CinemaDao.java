@@ -33,7 +33,7 @@ public class CinemaDao {
   public ArrayList<Seat> getReservedSeats(int cinemaId) {
     ArrayList<Seat> seats = new ArrayList<>();
     try {
-      String sql = "SELECT id, row_no, column_no FROM seat WHERE cinema_id = ? ORDER BY id DESC";
+      String sql = "SELECT id, row_no, column_no FROM seat WHERE cinema_id = ? ORDER BY id ASC";
       Connection cons = CinemaDatabase.getInstance().getConnection();
       PreparedStatement stmt = cons.prepareStatement(sql);
       stmt.setInt(1, cinemaId);
